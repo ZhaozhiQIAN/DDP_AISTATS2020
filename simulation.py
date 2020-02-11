@@ -62,7 +62,7 @@ lambda_init = np.float32(
     )
 )
 
-graph_hawkes_model = models.GraphHawkesTimeGap(
+ddp_model = models.DDP(
     n_event_type=n_event_type, 
     n_context_dim=context_dim, 
     first_occurrence_only=False, 
@@ -73,7 +73,7 @@ graph_hawkes_model = models.GraphHawkesTimeGap(
     gap_mean=gap_mean, 
     gap_scale=gap_std
 )
-opt_graph_hawkes = optim.SGD(graph_hawkes_model.parameters(), lr=0.001, momentum=0.9)
+opt_ddp = optim.SGD(ddp_model.parameters(), lr=0.001, momentum=0.9)
 
 c_hawkes_model = models.CHawkes(n_event_type=n_event_type, n_context_dim=context_dim,
                                 first_occurrence_only=False, alpha_mat_np=alpha_init, lambda_mat_np=lambda_init)
@@ -100,9 +100,9 @@ for i in range(training_itr):
         with torch.no_grad():
             test_batch = data_loader.get_whole_batch(batch_input_np)
 
-            graph_hawkes_model.set_input(*test_batch)
+            ddp_model.set_input(*test_batch)
 
-            weights = graph_hawkes_model.graph_weights_seq.numpy()
+            weights = ddp_model.graph_weights_seq.numpy()
             rnn_sd.append(np.std(weights))
 
             avg_weight_list = list()
@@ -118,14 +118,14 @@ for i in range(training_itr):
 
             avg_weight = np.array(avg_weight_list)
             mat_dist_ddp.append(
-                np.sum(np.abs(torch.exp(graph_hawkes_model.alpha_mat).numpy() * avg_weight - true_alpha)))
+                np.sum(np.abs(torch.exp(ddp_model.alpha_mat).numpy() * avg_weight - true_alpha)))
             mat_dist_hawkes.append(np.sum(np.abs(torch.exp(c_hawkes_model.alpha_mat).numpy() - true_alpha)))
 
     mini_batch = data_loader.get_mini_batch(batch_size, batch_input_np)
     
-    graph_hawkes_model.set_input(*mini_batch)
-    log_lik = graph_hawkes_model() * (-1.0)
-    models.cross_ent_one_step(log_lik, opt_graph_hawkes)
+    ddp_model.set_input(*mini_batch)
+    log_lik = ddp_model() * (-1.0)
+    models.cross_ent_one_step(log_lik, opt_ddp)
 
     c_hawkes_model.set_input(*mini_batch)
     log_lik2 = c_hawkes_model() * (-1.0)

@@ -21,6 +21,7 @@ class MvtHawkes(torch.nn.Module):
     """
     Multivariate Hawkes Process
     """
+
     def __init__(self, n_event_type, first_occurrence_only=False, mu_vec_np=None, alpha_mat_np=None,
                  lambda_mat_np=None):
         super().__init__()
@@ -152,8 +153,6 @@ class MvtHawkes(torch.nn.Module):
     def get_prediction(self):
         seq_mask_to_current = self.seq_mask_to_current
         seq_time_to_current = self.seq_time_to_current
-        seq_type_event = self.seq_type_event
-        seq_mask = self.seq_mask
 
         assert not self.first_occurrence_only
 
@@ -168,14 +167,12 @@ class MvtHawkes(torch.nn.Module):
                     )
             )
             , dim=2
-        )  # * seq_mask
-        # division by zero? No. constant_term is not masked.
+        )
         total_lambda_over_seq = torch.sum(lambda_over_seq, dim=0)
         lambda_ratio_over_seq = lambda_over_seq / total_lambda_over_seq
         return lambda_ratio_over_seq
 
     def next_event_time(self, n_sims):
-
         time_diffs = torch.empty(n_sims, dtype=self.seq_time_to_current.dtype, device=self.seq_time_to_current.device)
         nn.init.uniform_(time_diffs, 0., 5.)
         time_diffs, _ = torch.sort(time_diffs)
@@ -564,7 +561,6 @@ class GraphHawkes(CHawkes):
         return lambda_ratio_over_seq
 
     def next_event_time(self, n_sims):
-
         time_diffs = torch.empty(n_sims, dtype=self.seq_time_to_current.dtype, device=self.seq_time_to_current.device)
         nn.init.uniform_(time_diffs, 0., 5.)
         time_diffs, _ = torch.sort(time_diffs)
@@ -629,7 +625,10 @@ class GraphHawkes(CHawkes):
         self._update_graph_weights()
 
 
-class GraphHawkesTimeGap(GraphHawkes):
+class DDP(GraphHawkes):
+    """
+    DDP model
+    """
     def __init__(self, n_event_type, n_context_dim, first_occurrence_only=False, mu_vec_np=None, alpha_mat_np=None,
                  lambda_mat_np=None, embedding_size=10, rnn_hidden_size=10, gap_mean=0, gap_scale=1):
         super().__init__(n_event_type, n_context_dim, first_occurrence_only, mu_vec_np, alpha_mat_np, lambda_mat_np)

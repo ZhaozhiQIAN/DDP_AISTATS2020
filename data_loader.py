@@ -1,3 +1,7 @@
+"""
+The data loader is partially adapted from https://github.com/HMEIatJHU/neurawkes
+"""
+
 import numpy as np
 import torch
 import random
