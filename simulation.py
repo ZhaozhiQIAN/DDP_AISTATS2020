@@ -2,6 +2,8 @@ import pickle
 import torch
 import torch.optim as optim
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import data_loader
 import models
@@ -84,7 +86,7 @@ mat_dist_hawkes = list()
 rnn_sd = list()
 
 batch_size = 100
-training_itr = 1000
+training_itr = 10
 report_step = 1
 
 current_best = 10000
@@ -125,7 +127,6 @@ for i in range(training_itr):
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 line = ax.plot(np.array(mat_dist_ddp), label='DDP')
-
 ax.axhline(y=min(mat_dist_hawkes), color='r', linestyle='--', label='Hawkes (Ground Truth)')
 plt.xlabel('Training Iteration')
 plt.ylabel('L1 Distance')
