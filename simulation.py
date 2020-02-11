@@ -89,7 +89,7 @@ mat_dist_hawkes = list()
 rnn_sd = list()
 
 batch_size = 100
-training_itr = 10
+training_itr = 1000
 report_step = 1
 
 current_best = 10000
